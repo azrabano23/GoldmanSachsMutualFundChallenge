@@ -13,11 +13,15 @@ public class FundService {
     private List<Fund> funds = new ArrayList<>();
 
     public FundService() {
-        funds.add(new Fund("Vanguard Total Stock Market Index Fund Institutional Plus Shares", "VSMPX", fetchBeta("VSMPX")));
-        funds.add(new Fund("Fidelity 500 Index Fund", "FXAIX", fetchBeta("FXAIX")));
-        funds.add(new Fund("Vanguard 500 Index Fund", "VFIAX", fetchBeta("VFIAX")));
-        funds.add(new Fund("Vanguard Total Stock Market Index Fund Admiral Shares", "VTSAX", fetchBeta("VTSAX")));
-        funds.add(new Fund("Vanguard Total International Stock Index Fund", "VGTSX", fetchBeta("VGTSX")));
+        funds.add(new Fund("Vanguard Total Stock Market Index Fund Institutional Plus Shares", "VSMPX"));
+        funds.add(new Fund("Fidelity 500 Index Fund", "FXAIX"));
+        funds.add(new Fund("Vanguard 500 Index Fund", "VFIAX"));
+        funds.add(new Fund("Vanguard Total Stock Market Index Fund Admiral Shares", "VTSAX"));
+        funds.add(new Fund("Vanguard Total International Stock Index Fund", "VGTSX"));
+    }
+
+    public List<Fund> getFunds() {
+        return funds;
     }
 
     private Double fetchBeta(String ticker) {
@@ -26,11 +30,19 @@ public class FundService {
             Map<String, Object> response = restTemplate.getForObject(url, Map.class);
             return (Double) response.get("data");
         } catch (Exception e) {
+            System.err.println("Failed to fetch beta for ticker " + ticker + ": " + e.getMessage());
             return 0.0;
         }
     }
 
-    public List<Fund> getFunds() {
-        return funds;
+    public Double calculateFutureValue(String ticker, double principal, double years) {
+        double beta = fetchBeta(ticker);
+        double riskFreeRate = 0.04;
+        double expectedMarketReturn = 0.10;
+
+        double r = riskFreeRate + beta * (expectedMarketReturn - riskFreeRate);
+        double futureValue = principal * Math.exp(r * years);
+
+        return futureValue;
     }
 }

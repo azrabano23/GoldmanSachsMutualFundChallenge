@@ -1,22 +1,14 @@
 package com.mfund.model;
-/*
-	Stock tickers:
-	VSMPX
-	FXAIX
-	VFIAX
-	VTSAX
-	VGTSX
-*/
 
 public class Fund {
 	private String name;
 	private String ticker;
 	private Double beta;
 
-	public Fund(String name, String ticker, Double beta) {
+	public Fund(String name, String ticker) {
 		this.name = name;
 		this.ticker = ticker;
-		this.beta = beta;
+		this.beta = null;
 	}
 
 	public String getName() {
@@ -29,5 +21,9 @@ public class Fund {
 
 	public Double getBeta() {
 		return beta;
+	}
+
+	public void setBeta(Double beta) {
+		this.beta = beta;
 	}
 }
