@@ -23,12 +23,10 @@ public class AIPortfolioController {
         this.aiPortfolioService = aiPortfolioService;
     }
 
-    @PostMapping
+    @PostMapping("/ai/portfolio")
     public ResponseEntity<?> generate(@RequestBody PortfolioInput input) {
-        String prompt = aiPortfolioService.buildPrompt(input);
-
         try {
-            Portfolio portfolio = aiPortfolioService.getAIResponse(prompt);
+            Portfolio portfolio = aiPortfolioService.generatePortfolio(input);
             return ResponseEntity.ok(portfolio);
 
         } catch (Exception e) {
@@ -44,23 +42,9 @@ public class AIPortfolioController {
         input.setTickers(java.util.Arrays.asList("FXAIX", "VFIAX"));
         input.setRisk("medium");
         input.setYears(5);
-        double principal = 1000;
+        input.setPrincipal(1000);
 
-        Portfolio response = aiPortfolioService.getAIResponse(aiPortfolioService.buildPrompt(input));
-        List<PortfolioItem> portfolio = response.getPortfolio();
-
-        FundService calc = new FundService();
-
-        for (PortfolioItem portfolioItem : portfolio) {
-            for (int j = 0; j < input.getYears() * 12; j++) {
-                double allocation = portfolioItem.getAllocation();
-                String ticker = portfolioItem.getTicker();
-                double monthly_val = calc.calculateFutureValue(ticker, principal * allocation, (double) (j + 1) /12);
-                portfolioItem.getReturns().add(monthly_val);
-            }
-        }
-
-        return response;
+        return aiPortfolioService.generatePortfolio(input);
     }
 }
 

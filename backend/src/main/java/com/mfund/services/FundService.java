@@ -68,4 +68,22 @@ public class FundService {
 
         return futureValue;
     }
+
+
+    public List<Double> calculateMonthlyFutureValues(String ticker, double principal, double years) {
+        double beta = fetchBeta(ticker);
+        double riskFreeRate = 0.04;
+        double expectedReturnRate = fetchYearlyReturn(ticker);
+
+        List<Double> futureValues = new ArrayList<>();
+        futureValues.add(principal);
+        for(int i = 0; i < years * 12; i++) {
+            double time = (double) (i+1) / 12;
+            double r = riskFreeRate + (beta * (expectedReturnRate - riskFreeRate));
+            double futureValue = principal * Math.exp(r * time);
+            futureValues.add(futureValue);
+        }
+
+        return futureValues;
+    }
 }

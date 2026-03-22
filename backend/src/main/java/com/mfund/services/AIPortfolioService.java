@@ -1,6 +1,8 @@
 package com.mfund.services;
 
 import com.mfund.model.Portfolio;
+import com.mfund.model.PortfolioItem;
+import com.mfund.services.FundService;
 import org.springframework.stereotype.Service;
 
 import com.openai.client.OpenAIClient;
@@ -10,6 +12,7 @@ import com.openai.models.responses.ResponseCreateParams;
 
 import com.mfund.model.PortfolioInput;
 
+import java.util.List;
 import java.util.stream.Collectors;
 
 import com.google.gson.Gson;
@@ -30,16 +33,18 @@ public class AIPortfolioService {
                 .build();
     }
 
-    public Portfolio getAIResponse(String prompt) {
+    public Portfolio generatePortfolio(PortfolioInput input) {
+        String prompt = buildPrompt(input);
+
         ResponseCreateParams params = ResponseCreateParams.builder()
                 .input(prompt)
                 .model("openai/gpt-oss-120b")
                 .build();
 
-        Response response = client.responses().create(params);
-//        System.out.println(response.toString());
+        Response output = client.responses().create(params);
+//        System.out.println(output.toString());
 
-        String portfolio_string = response.output().stream()
+        String portfolio_string = output.output().stream()
                 .flatMap(item -> item.message().stream())
                 .flatMap(msg -> msg.content().stream())
                 .flatMap(content -> content.outputText().stream())
@@ -48,13 +53,24 @@ public class AIPortfolioService {
 
         Gson gson = new Gson();
 
-//        JsonArray portfolioArray = jsonObject.getAsJsonArray("portfolio");
-//        for(JsonElement element : portfolioArray) {
-//            JsonObject e = element.getAsJsonObject();
-//            System.out.print(e.get("allocation").getAsDouble());
-//            System.out.print(e.get("ticker").getAsString());
-//        }
-        return gson.fromJson(portfolio_string, Portfolio.class);
+        Portfolio response = gson.fromJson(portfolio_string, Portfolio.class);
+
+        List<PortfolioItem> portfolio = response.getPortfolio();
+
+        FundService calc = new FundService();
+
+        double principal = input.getPrincipal();
+        for (PortfolioItem portfolioItem : portfolio) {
+            double allocation = portfolioItem.getAllocation();
+            String ticker = portfolioItem.getTicker();
+            List<Double> monthly_returns = calc.calculateMonthlyFutureValues(
+                    ticker,
+                    principal * allocation,
+                    input.getYears());
+            portfolioItem.setReturns(monthly_returns);
+        }
+
+        return response;
     }
 
     public String buildPrompt(PortfolioInput input) {

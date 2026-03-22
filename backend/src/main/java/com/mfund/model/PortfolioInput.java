@@ -7,13 +7,15 @@ public class PortfolioInput {
     private List<String> tickers;
     private String risk;
     private int years;
+    private double principal;
 
     public PortfolioInput() {}
 
-    public PortfolioInput(List<String> tickers, int years, String risk) {
+    public PortfolioInput(List<String> tickers, int years, String risk, double principal) {
         this.tickers = tickers;
         this.years = years;
         this.risk = risk;
+        this.principal = principal;
     }
 
     public List<String> getTickers() {
@@ -25,6 +27,9 @@ public class PortfolioInput {
     public String getRisk() {
         return risk;
     }
+    public double getPrincipal() {
+        return principal;
+    }
 
     public void setRisk(String risk) {
         this.risk = risk;
@@ -34,6 +39,9 @@ public class PortfolioInput {
     }
     public void setYears(int years) {
         this.years = years;
+    }
+    public void setPrincipal(double principal) {
+        this.principal = principal;
     }
 }
 
