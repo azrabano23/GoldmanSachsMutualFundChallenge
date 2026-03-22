@@ -1,5 +1,6 @@
 package com.mfund.services;
 
+import com.mfund.model.Portfolio;
 import org.springframework.stereotype.Service;
 
 import com.openai.client.OpenAIClient;
@@ -29,7 +30,7 @@ public class AIPortfolioService {
                 .build();
     }
 
-    public String getAIResponse(String prompt) {
+    public Portfolio getAIResponse(String prompt) {
         ResponseCreateParams params = ResponseCreateParams.builder()
                 .input(prompt)
                 .model("openai/gpt-oss-120b")
@@ -46,15 +47,14 @@ public class AIPortfolioService {
                 .collect(Collectors.joining());
 
         Gson gson = new Gson();
-        JsonObject jsonObject = gson.fromJson(portfolio_string, JsonObject.class);
 
-        JsonArray portfolioArray = jsonObject.getAsJsonArray("portfolio");
-        for(JsonElement element : portfolioArray) {
-            JsonObject e = element.getAsJsonObject();
-            System.out.print(e.get("allocation").getAsDouble());
-            System.out.print(e.get("ticker").getAsString());
-        }
-        return "";
+//        JsonArray portfolioArray = jsonObject.getAsJsonArray("portfolio");
+//        for(JsonElement element : portfolioArray) {
+//            JsonObject e = element.getAsJsonObject();
+//            System.out.print(e.get("allocation").getAsDouble());
+//            System.out.print(e.get("ticker").getAsString());
+//        }
+        return gson.fromJson(portfolio_string, Portfolio.class);
     }
 
     public String buildPrompt(PortfolioInput input) {
