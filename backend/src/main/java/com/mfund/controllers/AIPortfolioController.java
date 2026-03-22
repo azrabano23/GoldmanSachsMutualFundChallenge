@@ -23,7 +23,7 @@ public class AIPortfolioController {
         this.aiPortfolioService = aiPortfolioService;
     }
 
-    @PostMapping("/ai/portfolio")
+    @PostMapping("/portfolio")
     public ResponseEntity<?> generate(@RequestBody PortfolioInput input) {
         try {
             Portfolio portfolio = aiPortfolioService.generatePortfolio(input);

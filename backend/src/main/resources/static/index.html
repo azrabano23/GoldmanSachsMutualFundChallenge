@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Portfolio Generator</title>
+</head>
+<body>
+
+<h2>Generate Portfolio</h2>
+
+<form id="portfolioForm">
+    <label>Tickers:</label><br>
+    <select id="tickers" multiple>
+        <option value="VSMPX">Vanguard Total Stock Market Index Fund Institutional Plus Shares (VSMPX)</option>
+        <option value="FXAIX">Fidelity 500 Index Fund (FXAIX)</option>
+        <option value="VFIAX">Vanguard 500 Index Fund (VFIAX)</option>
+        <option value="VTSAX">Vanguard Total Stock Market Index Fund Admiral Shares (VTSAX)</option>
+        <option value="VGTSX">Vanguard Total International Stock Index Fund (VGTSX)</option>
+    </select>
+    <br><br>
+
+    <label>Risk:</label><br>
+    <select id="risk">
+        <option value="low">Low</option>
+        <option value="medium">Medium</option>
+        <option value="high">High</option>
+    </select><br><br>
+
+    <label>Years:</label><br>
+    <input type="number" id="years"><br><br>
+
+    <label>Principal:</label><br>
+    <input type="number" id="principal"><br><br>
+
+    <button type="submit">Generate</button>
+</form>
+
+<pre id="result"></pre>
+
+<script>
+    document.getElementById("portfolioForm").addEventListener("submit", async function(e) {
+        e.preventDefault();
+
+        const tickersSelect = document.getElementById("tickers");
+        const tickers = Array.from(tickersSelect.selectedOptions).map(option => option.value);
+        const risk = document.getElementById("risk").value;
+        const years = parseInt(document.getElementById("years").value);
+        const principal = document.getElementById("principal").value;
+
+        const response = await fetch(`http://localhost:8080/ai/portfolio`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                tickers: tickers,
+                risk: risk,
+                years: years,
+                principal: principal
+            })
+        });
+
+        const data = await response.json();
+        document.getElementById("result").textContent = JSON.stringify(data, null, 2);
+    });
+</script>
+
+</body>
+</html>
