@@ -36,16 +36,6 @@ public class AIPortfolioController {
         }
     }
 
-    @GetMapping("/test")
-    public Portfolio test() {
-        PortfolioInput input = new PortfolioInput();
-        input.setTickers(java.util.Arrays.asList("FXAIX", "VFIAX"));
-        input.setRisk("medium");
-        input.setYears(5);
-        input.setPrincipal(1000);
-
-        return aiPortfolioService.generatePortfolio(input);
-    }
 }
 
 
