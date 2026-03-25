@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.Calendar;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
+import com.mfund.model.BacktestResult;
 import com.mfund.model.Fund;
 import yahoofinance.Stock;
 import yahoofinance.YahooFinance;
@@ -18,11 +19,18 @@ public class FundService {
     private List<Fund> funds = new ArrayList<>();
 
     public FundService() {
+        // Original 5 funds
         funds.add(new Fund("Vanguard Total Stock Market Index Fund Institutional Plus Shares", "VSMPX"));
         funds.add(new Fund("Fidelity 500 Index Fund", "FXAIX"));
         funds.add(new Fund("Vanguard 500 Index Fund", "VFIAX"));
         funds.add(new Fund("Vanguard Total Stock Market Index Fund Admiral Shares", "VTSAX"));
         funds.add(new Fund("Vanguard Total International Stock Index Fund", "VGTSX"));
+        // Additional funds — all verified against Newton Analytics beta API
+        funds.add(new Fund("Fidelity Contrafund", "FCNTX"));
+        funds.add(new Fund("American Funds Growth Fund of America", "AGTHX"));
+        funds.add(new Fund("Dodge & Cox Stock Fund", "DODGX"));
+        funds.add(new Fund("Vanguard Wellington Fund", "VWELX"));
+        funds.add(new Fund("T. Rowe Price Dividend Growth Fund", "PRDGX"));
     }
 
     public List<Fund> getFunds() {
@@ -85,5 +93,47 @@ public class FundService {
         }
 
         return futureValues;
+    }
+
+    /**
+     * Historical backtest: simulates "what would $principal invested N years ago be worth today?"
+     *
+     * Uses Yahoo Finance historical data to find the fund price N years ago and today,
+     * then calculates actual realized returns.
+     *
+     * @param ticker    mutual fund ticker symbol
+     * @param principal initial investment amount in USD
+     * @param years     how many years ago the investment was made
+     * @return          BacktestResult with final value, total return, and annualized return (CAGR)
+     */
+    public BacktestResult backtest(String ticker, double principal, int years) {
+        try {
+            Calendar from = Calendar.getInstance();
+            Calendar to = Calendar.getInstance();
+            from.add(Calendar.YEAR, -years);
+
+            Stock stock = YahooFinance.get(ticker);
+            List<HistoricalQuote> history = stock.getHistory(from, to, Interval.MONTHLY);
+
+            if (history == null || history.size() < 2) {
+                throw new RuntimeException("Insufficient historical data for " + ticker);
+            }
+
+            // Yahoo Finance returns history in reverse-chronological order; oldest entry is last
+            double priceAtStart = history.get(history.size() - 1).getClose().doubleValue();
+            double priceToday   = history.get(0).getClose().doubleValue();
+
+            double growthFactor      = priceToday / priceAtStart;
+            double finalValue        = principal * growthFactor;
+            double totalReturn       = (finalValue - principal) / principal;
+            // CAGR: (finalValue/principal)^(1/years) - 1
+            double annualizedReturn  = Math.pow(growthFactor, 1.0 / years) - 1.0;
+
+            return new BacktestResult(ticker, years, principal, finalValue, totalReturn, annualizedReturn);
+
+        } catch (Exception e) {
+            System.err.println("Backtest failed for " + ticker + ": " + e.getMessage());
+            throw new RuntimeException("Could not retrieve historical data for " + ticker + ": " + e.getMessage(), e);
+        }
     }
 }

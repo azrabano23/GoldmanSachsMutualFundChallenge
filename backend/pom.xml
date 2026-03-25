@@ -64,6 +64,25 @@
 			<version>2.10.1</version>
 		</dependency>
 
+		<!-- Swagger UI: interactive API explorer at /swagger-ui.html -->
+		<dependency>
+			<groupId>org.springdoc</groupId>
+			<artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+			<version>2.3.0</version>
+		</dependency>
+
+		<!-- Spring Data JPA: ORM layer for the investment history database -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-data-jpa</artifactId>
+		</dependency>
+
+		<!-- H2 in-memory database (development); swap datasource URL for Cloud SQL in production -->
+		<dependency>
+			<groupId>com.h2database</groupId>
+			<artifactId>h2</artifactId>
+			<scope>runtime</scope>
+		</dependency>
 
 	</dependencies>
 
