@@ -231,7 +231,7 @@ cd backend
 | Layer | Technology | Notes |
 |---|---|---|
 | Backend | Java 17, Spring Boot 4 | Specified by GS project brief |
-| AI | Llama 3.3-70B via Groq API | OpenAI-compatible, free tier |
+| AI | Groq API (llama-3.3-70b-versatile for fund analysis; gpt-oss-120b for portfolio allocation) | OpenAI-compatible, free tier |
 | Beta data | Newton Analytics API | Specified by GS project brief |
 | Price / return data | Yahoo Finance (YahooFinanceAPI v3.17.0) | Real historical data |
 | Database | H2 (dev) → Google Cloud SQL (prod) | Spring Data JPA / Hibernate |
