@@ -53,6 +53,9 @@ future value = principal × e^(r × t)
 | `GET /funds/backtest` — historical "what if I invested X years ago?" | Azra |
 | `POST/GET/DELETE /investments` — save projections to database | Azra |
 | `POST /ai/analyze/{ticker}` — AI deep-dive on a single fund | Azra |
+| `GET /funds/monte-carlo` — probabilistic range of outcomes (1000 simulations) | Azra |
+| `GET /funds/dca` — dollar-cost averaging periodic contribution model | Azra |
+| `GET /funds/sharpe` — Sharpe Ratio risk-adjusted return calculation | Azra |
 | 10 mutual funds (expanded from 5) | Azra |
 | Swagger API docs | Azra |
 | JUnit tests | Azra |
@@ -74,6 +77,13 @@ GET  /funds/future-value/{ticker}?principal=&years=       → CAPM future value
 ```
 GET  /funds/compare?tickers=VFIAX,FXAIX&principal=&years= → side-by-side monthly projections
 GET  /funds/backtest?ticker=&principal=&years=            → historical simulation
+```
+
+### Bonus: Quantitative Analytics (Azra)
+```
+GET  /funds/monte-carlo?ticker=&principal=&years=&simulations=1000 → probabilistic fan chart (p10/p50/p90)
+GET  /funds/dca?ticker=&monthlyAmount=&years=                      → dollar-cost averaging projection
+GET  /funds/sharpe?ticker=&years=3                                 → Sharpe Ratio + interpretation
 ```
 
 ### Bonus: Investment History Database (Azra)
@@ -129,7 +139,27 @@ Response fields:
 - `keyConsiderations` — 3 things to know before investing
 - `summary` — bottom-line recommendation
 
-### 5. Swagger UI
+### 5. Monte Carlo Simulation (`/funds/monte-carlo`)
+> "Show me the realistic range of outcomes — not just the best-guess projection."
+
+The CAPM model gives one deterministic line. Monte Carlo runs 1,000 simulations where every month's return is randomly drawn from a normal distribution fitted to the fund's actual 5-year monthly return history. The result is three paths: pessimistic (10th percentile), median (50th), and optimistic (90th) — a fan chart. This is the same technique used by real quant analysts.
+
+Technical detail: each simulation uses Geometric Brownian Motion — `value[t+1] = value[t] × (1 + N(μ, σ²))` where μ and σ are estimated from historical data using `ThreadLocalRandom.nextGaussian()`.
+
+### 6. Dollar-Cost Averaging (`/funds/dca`)
+> "I can't invest $10,000 now — but I can put in $500/month. What happens?"
+
+DCA models how most people actually invest: fixed periodic contributions (like a 401k). It's mathematically different from lump sum because early months may buy more shares when price is low. Returns month-by-month portfolio value AND total amount invested so the frontend can overlay both lines — the gap between them is your profit.
+
+Formula per month: `portfolio = portfolio × (1 + monthly_rate) + contribution`
+where `monthly_rate = (1 + annual_CAPM_rate)^(1/12) − 1`
+
+### 7. Sharpe Ratio (`/funds/sharpe`)
+> "Are this fund's returns actually worth the risk?"
+
+Two funds with identical 10% annual returns are not equal if one swings ±30% a month and the other swings ±5%. The Sharpe Ratio captures this: `(annual_return − risk_free_rate) / annual_std_dev`. Calculated from real multi-year historical monthly data. Returns the ratio plus a plain-English interpretation (Poor / Acceptable / Good / Excellent / Exceptional).
+
+### 8. Swagger UI
 Go to `http://localhost:8080/swagger-ui.html` after starting the backend. Every endpoint is documented and testable from the browser — no frontend needed.
 
 ---
