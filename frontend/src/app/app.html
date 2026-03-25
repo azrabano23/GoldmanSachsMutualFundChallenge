@@ -24,7 +24,13 @@
       </div>
     </div>
 
-    <button (click)="calculate()">Calculate</button>
+    <button (click)="calculate()" [disabled]="loading">
+      {{ loading ? 'Calculating…' : 'Calculate' }}
+    </button>
+
+    @if (error) {
+      <div class="error">{{ error }}</div>
+    }
 
     @if (result !== null) {
       <div class="result">
