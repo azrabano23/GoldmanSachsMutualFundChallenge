@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(./mvnw spring-boot:run)",
+      "Bash(ng serve:*)",
+      "Read(//c/Users/mjala/GoldmanSachsMutualFundChallenge/backend/**)"
+    ],
+    "additionalDirectories": [
+      "c:\\Users\\mjala\\GoldmanSachsMutualFundChallenge\\backend\\src\\main\\java\\com\\mfund"
+    ]
+  }
+}

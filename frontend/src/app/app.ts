@@ -1,4 +1,5 @@
 import { Component, ElementRef, ViewChild } from '@angular/core';
+import { Component, ChangeDetectorRef } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { DecimalPipe } from '@angular/common';
@@ -23,7 +24,7 @@ export class App {
   loading = false;
   private chart: Chart | null = null;
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient, private cdr: ChangeDetectorRef) {}
 
   calculate() {
     this.error = null;
@@ -56,10 +57,12 @@ export class App {
         this.result = values[values.length - 1] ?? null;
         setTimeout(() => this.renderProjectionChart(timePoints, values), 0);
         this.loading = false;
+        this.cdr.detectChanges();
       },
       error: (err) => {
         this.error = 'Could not reach the backend. Is the Spring server running on port 8080?';
         this.loading = false;
+        this.cdr.detectChanges();
         console.error(err);
       }
     });
