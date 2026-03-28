@@ -36,8 +36,17 @@
       <div class="result">
         <span class="result-label">Projected Value</span>
         <span class="result-value">${{ result | number:'1.2-2' }}</span>
-        <span class="result-meta">{{ selectedFund }} &middot; 10% annual rate &middot; {{ years }} yr(s)</span>
       </div>
     }
+
+    <div class="chart-card">
+      <span class="result-label">Projection Chart</span>
+      @if (result === null) {
+        <span class="result-meta">Run a calculation to display the chart.</span>
+      }
+      <div class="chart-area">
+        <canvas #projectionCanvas></canvas>
+      </div>
+    </div>
   </div>
 </div>
