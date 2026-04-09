@@ -1,0 +1,395 @@
+<div class="page">
+  <div class="shell">
+
+    <!-- ── Header ─────────────────────────────────────────────────────────── -->
+    <header class="header">
+      <div class="header-inner">
+        <span class="logo">GS</span>
+        <h1 class="app-title">Mutual Fund Investment Predictor</h1>
+        <span class="badge">Group 4</span>
+      </div>
+      <nav class="tabs">
+        <button class="tab" [class.active]="activeTab === 'capm'"       (click)="activeTab = 'capm'">CAPM Projection</button>
+        <button class="tab" [class.active]="activeTab === 'montecarlo'" (click)="activeTab = 'montecarlo'">Monte Carlo</button>
+        <button class="tab" [class.active]="activeTab === 'compare'"    (click)="activeTab = 'compare'">Fund Comparison</button>
+        <button class="tab" [class.active]="activeTab === 'sharpe'"     (click)="activeTab = 'sharpe'">Sharpe Ratio</button>
+        <button class="tab" [class.active]="activeTab === 'ai'"         (click)="activeTab = 'ai'">AI Analyst</button>
+      </nav>
+    </header>
+
+    <!-- ── CAPM Projection ────────────────────────────────────────────────── -->
+    @if (activeTab === 'capm') {
+      <div class="panel">
+        <div class="panel-header">
+          <div>
+            <h2>CAPM Projection</h2>
+            <p class="subtitle">Future value using <strong>r = R<sub>f</sub> + β(R<sub>m</sub> − R<sub>f</sub>)</strong> with live beta from Newton Analytics</p>
+          </div>
+        </div>
+
+        <div class="form-grid">
+          <div class="form-group full">
+            <label>Fund</label>
+            <select [(ngModel)]="capmFund">
+              @for (f of funds; track f.ticker) {
+                <option [value]="f.ticker">{{ f.ticker }} — {{ f.name }}</option>
+              }
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Initial Investment ($)</label>
+            <input type="number" [(ngModel)]="capmAmount" min="1" placeholder="10000" />
+          </div>
+          <div class="form-group">
+            <label>Time Horizon (years)</label>
+            <input type="number" [(ngModel)]="capmYears" min="1" placeholder="10" />
+          </div>
+        </div>
+
+        <button class="btn-primary" (click)="calculateCapm()" [disabled]="capmLoading">
+          {{ capmLoading ? 'Calculating…' : 'Calculate' }}
+        </button>
+
+        @if (capmError) { <div class="error">{{ capmError }}</div> }
+
+        @if (capmResult !== null) {
+          <div class="result-row">
+            <div class="stat-card">
+              <span class="stat-label">Projected Value</span>
+              <span class="stat-value">${{ capmResult | number:'1.2-2' }}</span>
+            </div>
+            <div class="stat-card">
+              <span class="stat-label">Total Return</span>
+              <span class="stat-value stat-good">+{{ formatPct((capmResult - capmAmount) / capmAmount) }}</span>
+            </div>
+            <div class="stat-card">
+              <span class="stat-label">Principal</span>
+              <span class="stat-value">${{ capmAmount | number:'1.2-2' }}</span>
+            </div>
+          </div>
+        }
+
+        <div class="chart-card">
+          <span class="chart-label">CAPM Growth Curve</span>
+          @if (capmResult === null && !capmLoading) {
+            <span class="chart-empty">Run a calculation to display the projection chart.</span>
+          }
+          <div class="chart-area"><canvas #capmCanvas></canvas></div>
+        </div>
+      </div>
+    }
+
+    <!-- ── Monte Carlo ─────────────────────────────────────────────────────── -->
+    @if (activeTab === 'montecarlo') {
+      <div class="panel">
+        <div class="panel-header">
+          <div>
+            <h2>Monte Carlo Simulation</h2>
+            <p class="subtitle">Probabilistic outcomes using <strong>Geometric Brownian Motion</strong> fitted to 5 years of historical returns</p>
+          </div>
+        </div>
+
+        <div class="form-grid">
+          <div class="form-group full">
+            <label>Fund</label>
+            <select [(ngModel)]="mcFund">
+              @for (f of funds; track f.ticker) {
+                <option [value]="f.ticker">{{ f.ticker }} — {{ f.name }}</option>
+              }
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Initial Investment ($)</label>
+            <input type="number" [(ngModel)]="mcAmount" min="1" placeholder="10000" />
+          </div>
+          <div class="form-group">
+            <label>Time Horizon (years)</label>
+            <input type="number" [(ngModel)]="mcYears" min="1" placeholder="10" />
+          </div>
+          <div class="form-group">
+            <label>Simulations (max 5000)</label>
+            <input type="number" [(ngModel)]="mcSims" min="100" max="5000" placeholder="1000" />
+          </div>
+        </div>
+
+        <button class="btn-primary" (click)="runMonteCarlo()" [disabled]="mcLoading">
+          {{ mcLoading ? 'Simulating…' : 'Run Simulation' }}
+        </button>
+
+        @if (mcError) { <div class="error">{{ mcError }}</div> }
+
+        @if (mcResult) {
+          <div class="result-row">
+            <div class="stat-card">
+              <span class="stat-label">Pessimistic (p10)</span>
+              <span class="stat-value stat-poor">${{ mcResult.p10FinalValue | number:'1.0-0' }}</span>
+            </div>
+            <div class="stat-card">
+              <span class="stat-label">Median (p50)</span>
+              <span class="stat-value stat-good">${{ mcResult.p50FinalValue | number:'1.0-0' }}</span>
+            </div>
+            <div class="stat-card">
+              <span class="stat-label">Optimistic (p90)</span>
+              <span class="stat-value stat-excellent">${{ mcResult.p90FinalValue | number:'1.0-0' }}</span>
+            </div>
+            <div class="stat-card">
+              <span class="stat-label">Hist. Annual Return</span>
+              <span class="stat-value">{{ formatPct(mcResult.historicalMeanAnnualReturn) }}</span>
+            </div>
+            <div class="stat-card">
+              <span class="stat-label">Annual Volatility (σ)</span>
+              <span class="stat-value">{{ formatPct(mcResult.historicalStdDevAnnual) }}</span>
+            </div>
+            <div class="stat-card">
+              <span class="stat-label">Simulations Run</span>
+              <span class="stat-value">{{ mcResult.simulations | number }}</span>
+            </div>
+          </div>
+        }
+
+        <div class="chart-card">
+          <span class="chart-label">Monte Carlo Fan Chart — p10 / p50 / p90 paths</span>
+          @if (!mcResult && !mcLoading) {
+            <span class="chart-empty">Run a simulation to display the probability fan chart.</span>
+          }
+          <div class="chart-area"><canvas #mcCanvas></canvas></div>
+        </div>
+      </div>
+    }
+
+    <!-- ── Multi-Fund Comparison ──────────────────────────────────────────── -->
+    @if (activeTab === 'compare') {
+      <div class="panel">
+        <div class="panel-header">
+          <div>
+            <h2>Fund Comparison</h2>
+            <p class="subtitle">Compare up to 5 funds side-by-side with month-by-month CAPM projections</p>
+          </div>
+        </div>
+
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Initial Investment ($)</label>
+            <input type="number" [(ngModel)]="compareAmount" min="1" placeholder="10000" />
+          </div>
+          <div class="form-group">
+            <label>Time Horizon (years)</label>
+            <input type="number" [(ngModel)]="compareYears" min="1" placeholder="10" />
+          </div>
+        </div>
+
+        <div class="fund-list">
+          @for (f of compareFunds; track $index; let i = $index) {
+            <div class="fund-row">
+              <span class="fund-dot" [style.background]="'#1f6feb'">{{ i + 1 }}</span>
+              <select [(ngModel)]="compareFunds[i]" class="fund-select">
+                @for (opt of funds; track opt.ticker) {
+                  <option [value]="opt.ticker">{{ opt.ticker }} — {{ opt.name }}</option>
+                }
+              </select>
+              @if (compareFunds.length > 2) {
+                <button class="btn-remove" (click)="removeCompareFund(i)">✕</button>
+              }
+            </div>
+          }
+          @if (compareFunds.length < 5) {
+            <button class="btn-ghost" (click)="addCompareFund()">+ Add Fund</button>
+          }
+        </div>
+
+        <button class="btn-primary" (click)="runComparison()" [disabled]="compareLoading">
+          {{ compareLoading ? 'Comparing…' : 'Compare Funds' }}
+        </button>
+
+        @if (compareError) { <div class="error">{{ compareError }}</div> }
+
+        @if (compareResult) {
+          <div class="result-row">
+            @for (ticker of (compareResult | keyvalue); track ticker.key) {
+              <div class="stat-card">
+                <span class="stat-label">{{ ticker.key }} — Final Value</span>
+                <span class="stat-value">${{ ticker.value[ticker.value.length - 1] | number:'1.0-0' }}</span>
+              </div>
+            }
+          </div>
+        }
+
+        <div class="chart-card">
+          <span class="chart-label">Side-by-Side Fund Projections (monthly)</span>
+          @if (!compareResult && !compareLoading) {
+            <span class="chart-empty">Select funds and run comparison to display the overlay chart.</span>
+          }
+          <div class="chart-area"><canvas #compareCanvas></canvas></div>
+        </div>
+      </div>
+    }
+
+    <!-- ── Sharpe Ratio ────────────────────────────────────────────────────── -->
+    @if (activeTab === 'sharpe') {
+      <div class="panel">
+        <div class="panel-header">
+          <div>
+            <h2>Sharpe Ratio</h2>
+            <p class="subtitle">Risk-adjusted return: <strong>(Annual Return − R<sub>f</sub>) / σ</strong> — measured from real historical monthly data</p>
+          </div>
+        </div>
+
+        <div class="form-grid">
+          <div class="form-group full">
+            <label>Fund</label>
+            <select [(ngModel)]="sharpeFund">
+              @for (f of funds; track f.ticker) {
+                <option [value]="f.ticker">{{ f.ticker }} — {{ f.name }}</option>
+              }
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Years of Historical Data</label>
+            <select [(ngModel)]="sharpeYears">
+              <option [value]="1">1 year</option>
+              <option [value]="3">3 years</option>
+              <option [value]="5">5 years</option>
+            </select>
+          </div>
+        </div>
+
+        <button class="btn-primary" (click)="runSharpe()" [disabled]="sharpeLoading">
+          {{ sharpeLoading ? 'Calculating…' : 'Calculate Sharpe Ratio' }}
+        </button>
+
+        @if (sharpeError) { <div class="error">{{ sharpeError }}</div> }
+
+        @if (sharpeResult) {
+          <div class="result-row">
+            <div class="stat-card">
+              <span class="stat-label">Sharpe Ratio</span>
+              <span class="stat-value" [ngClass]="sharpeColor(sharpeResult.sharpeRatio)">
+                {{ sharpeResult.sharpeRatio | number:'1.2-2' }}
+              </span>
+            </div>
+            <div class="stat-card">
+              <span class="stat-label">Annual Return</span>
+              <span class="stat-value">{{ formatPct(sharpeResult.annualReturn) }}</span>
+            </div>
+            <div class="stat-card">
+              <span class="stat-label">Annual Volatility (σ)</span>
+              <span class="stat-value">{{ formatPct(sharpeResult.annualStdDev) }}</span>
+            </div>
+            <div class="stat-card">
+              <span class="stat-label">Risk-Free Rate</span>
+              <span class="stat-value">{{ formatPct(sharpeResult.riskFreeRate) }}</span>
+            </div>
+            <div class="stat-card">
+              <span class="stat-label">Data Window</span>
+              <span class="stat-value">{{ sharpeResult.yearsOfData }} yr{{ sharpeResult.yearsOfData !== 1 ? 's' : '' }}</span>
+            </div>
+          </div>
+          <div class="insight-card">
+            <span class="insight-icon">📊</span>
+            <div>
+              <p class="insight-title">Interpretation</p>
+              <p class="insight-body">{{ sharpeResult.interpretation }}</p>
+            </div>
+          </div>
+          <div class="scale-card">
+            <p class="scale-title">Sharpe Ratio Scale</p>
+            <div class="scale-row">
+              <span class="scale-item stat-poor">Below 0 — Negative (underperforms T-bills)</span>
+              <span class="scale-item stat-ok">0–1 — Acceptable</span>
+              <span class="scale-item stat-good">1–2 — Good</span>
+              <span class="scale-item stat-excellent">2+ — Excellent</span>
+            </div>
+          </div>
+        }
+      </div>
+    }
+
+    <!-- ── AI Fund Analyst ────────────────────────────────────────────────── -->
+    @if (activeTab === 'ai') {
+      <div class="panel">
+        <div class="panel-header">
+          <div>
+            <h2>AI Fund Analyst</h2>
+            <p class="subtitle">Grounded in <strong>live beta + 1-year return data</strong>, then analyzed by LLaMA-3.3-70B</p>
+          </div>
+          <div class="ai-badge">Powered by Groq</div>
+        </div>
+
+        <div class="form-grid">
+          <div class="form-group full">
+            <label>Select Fund to Analyze</label>
+            <select [(ngModel)]="aiFund">
+              @for (f of funds; track f.ticker) {
+                <option [value]="f.ticker">{{ f.ticker }} — {{ f.name }}</option>
+              }
+            </select>
+          </div>
+        </div>
+
+        <button class="btn-primary btn-ai" (click)="runAiAnalysis()" [disabled]="aiLoading">
+          {{ aiLoading ? 'Analyzing…' : 'Analyze Fund with AI' }}
+        </button>
+
+        @if (aiError) { <div class="error">{{ aiError }}</div> }
+
+        @if (aiLoading) {
+          <div class="ai-loading">
+            <div class="spinner"></div>
+            <p>Fetching live market data and running AI analysis…</p>
+          </div>
+        }
+
+        @if (aiResult) {
+          <div class="ai-result">
+            <div class="ai-header">
+              <div>
+                <h3>{{ aiResult.fundName }}</h3>
+                <span class="ai-ticker">{{ aiResult.ticker }}</span>
+              </div>
+              <div class="ai-metrics">
+                <div class="ai-metric">
+                  <span class="ai-metric-label">Beta (vs S&P 500)</span>
+                  <span class="ai-metric-value">{{ aiResult.beta | number:'1.2-2' }}</span>
+                </div>
+                <div class="ai-metric">
+                  <span class="ai-metric-label">1-Year Return</span>
+                  <span class="ai-metric-value" [class.stat-good]="aiResult.oneYearReturn > 0" [class.stat-poor]="aiResult.oneYearReturn < 0">
+                    {{ formatPct(aiResult.oneYearReturn) }}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div class="ai-sections">
+              <div class="ai-section">
+                <h4>Strategy Overview</h4>
+                <p>{{ aiResult.strategyOverview }}</p>
+              </div>
+              <div class="ai-section">
+                <h4>Risk Assessment</h4>
+                <p>{{ aiResult.riskAssessment }}</p>
+              </div>
+              <div class="ai-section">
+                <h4>Ideal Investor Profile</h4>
+                <p>{{ aiResult.investorProfile }}</p>
+              </div>
+              <div class="ai-section">
+                <h4>Key Considerations</h4>
+                <ul class="considerations">
+                  @for (item of aiResult.keyConsiderations; track $index) {
+                    <li>{{ item }}</li>
+                  }
+                </ul>
+              </div>
+              <div class="ai-section ai-summary">
+                <h4>Summary Recommendation</h4>
+                <p>{{ aiResult.summary }}</p>
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+    }
+
+  </div>
+</div>
