@@ -7,6 +7,24 @@
 
 A full-stack web application that helps users estimate potential returns on mutual fund investments. Users select a fund, enter an initial investment amount and time horizon, and receive a projected future value calculated using the Capital Asset Pricing Model (CAPM). The app also supports fund comparison, historical backtesting, AI-generated portfolio allocation, advanced financial simulations, and a persistent investment history database.
 
+> Built for the **Goldman Sachs Engineering Emerging Leaders Series 2026** (Group 4). This is a team project; the team table below is exact. My (**Azra Bano's**) contributions are the quantitative and data layer — fund comparison, historical backtesting, the Monte Carlo / Sharpe analytics, the investment-history persistence, and the AI fund analyst.
+
+---
+
+## Quantitative methods & honest assumptions
+
+The point of this app is turning a fund ticker into a *defensible* return estimate, so the modelling choices — and their limits — matter more than the UI.
+
+**1. Expected return — CAPM.** A fund's annual expected return is `r = r_f + β·(E[R_m] − r_f)`, and a lump sum compounds continuously as `FV = P·e^{r·t}`. Here `r_f` is the risk-free rate, `β` the fund's sensitivity to the market, and `E[R_m]` the expected market return. Inputs are live: **β** from the Newton Analytics beta API (monthly observations vs. `^GSPC`), **historical returns** from Yahoo Finance.
+
+**2. Distribution of outcomes — Monte Carlo (GBM).** CAPM gives one line; reality is a distribution. We fit `(μ, σ)` from five years of monthly returns and simulate thousands of paths under geometric Brownian motion — each month's return drawn from `N(μ, σ)` — then report the 5th/50th/95th-percentile terminal values. This is the difference between "you'll have $X" and "you'll have $X with this much spread."
+
+**3. Risk-adjusted return — Sharpe ratio.** `(R_p − r_f) / σ_p`, so two funds with the same return are separated by how much volatility they made you stomach to get it.
+
+**4. Path strategies — DCA & backtest.** Dollar-cost averaging simulates fixed monthly buys (smoothing entry price); the backtest replays an investment against realised historical prices rather than a model.
+
+**Assumptions I'd flag in an interview, not hide:** CAPM is a single-factor model — it attributes all systematic risk to one β and ignores size/value/momentum factors. The risk-free rate is currently pinned at **4%** (≈ the 10-yr Treasury) rather than pulled live. β comes from a short observation window, so it's noisy. Historical μ/σ are backward-looking and assume the return distribution is stationary and roughly normal (real returns are fat-tailed). The estimates are decision *support*, explicitly not advice. Naming these is the quant-rigor part; a model you can't critique is a model you shouldn't trust.
+
 ---
 
 ## Team
