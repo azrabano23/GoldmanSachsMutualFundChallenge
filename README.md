@@ -11,9 +11,9 @@ A full-stack web application that helps users estimate potential returns on mutu
 
 ---
 
-## Quantitative methods & honest assumptions
+## Quantitative methods
 
-The point of this app is turning a fund ticker into a *defensible* return estimate, so the modelling choices — and their limits — matter more than the UI.
+The point of this app is turning a fund ticker into a *defensible* return estimate, so the modelling choices matter more than the UI.
 
 **1. Expected return — CAPM.** A fund's annual expected return is `r = r_f + β·(E[R_m] − r_f)`, and a lump sum compounds continuously as `FV = P·e^{r·t}`. Here `r_f` is the risk-free rate, `β` the fund's sensitivity to the market, and `E[R_m]` the expected market return. Inputs are live: **β** from the Newton Analytics beta API (monthly observations vs. `^GSPC`), **historical returns** from Yahoo Finance.
 
@@ -22,8 +22,6 @@ The point of this app is turning a fund ticker into a *defensible* return estima
 **3. Risk-adjusted return — Sharpe ratio.** `(R_p − r_f) / σ_p`, so two funds with the same return are separated by how much volatility they made you stomach to get it.
 
 **4. Path strategies — DCA & backtest.** Dollar-cost averaging simulates fixed monthly buys (smoothing entry price); the backtest replays an investment against realised historical prices rather than a model.
-
-**Assumptions I'd flag in an interview, not hide:** CAPM is a single-factor model — it attributes all systematic risk to one β and ignores size/value/momentum factors. The risk-free rate is currently pinned at **4%** (≈ the 10-yr Treasury) rather than pulled live. β comes from a short observation window, so it's noisy. Historical μ/σ are backward-looking and assume the return distribution is stationary and roughly normal (real returns are fat-tailed). The estimates are decision *support*, explicitly not advice. Naming these is the quant-rigor part; a model you can't critique is a model you shouldn't trust.
 
 ---
 
